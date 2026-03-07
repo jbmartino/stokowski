@@ -38,7 +38,7 @@ query($projectSlug: String!, $states: [String!]!, $after: String) {
       updatedAt
       state { name }
       labels { nodes { name } }
-      relations {
+      inverseRelations {
         nodes {
           type
           relatedIssue {
@@ -106,7 +106,7 @@ def _normalize_issue(node: dict) -> Issue:
     ]
 
     blockers = []
-    for rel in (node.get("relations", {}) or {}).get("nodes", []):
+    for rel in (node.get("inverseRelations", {}) or {}).get("nodes", []):
         if rel.get("type") == "blocks":
             ri = rel.get("relatedIssue", {}) or {}
             blockers.append(
