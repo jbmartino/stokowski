@@ -47,6 +47,7 @@ class Orchestrator:
         self._jinja = Environment(undefined=StrictUndefined)
         self._running = False
         self._last_issues: dict[str, Issue] = {}
+        self._last_completed_at: dict[str, datetime] = {}  # issue_id -> last worker completion time
 
     @property
     def cfg(self) -> ServiceConfig:
@@ -386,6 +387,11 @@ class Orchestrator:
         if attempt.started_at:
             elapsed = (datetime.now(timezone.utc) - attempt.started_at).total_seconds()
             self.total_seconds_running += elapsed
+
+        # Record completion time for last_run_at injection
+        completed_at = datetime.now(timezone.utc)
+        attempt.completed_at = completed_at
+        self._last_completed_at[issue.id] = completed_at
 
         # Remove from running
         self.running.pop(issue.id, None)
