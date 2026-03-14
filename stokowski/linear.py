@@ -135,6 +135,7 @@ ISSUE_TEAM_QUERY = """
 query($issueId: String!) {
   issue(id: $issueId) {
     team { id }
+    state { name }
   }
 }
 """
@@ -332,6 +333,16 @@ class LinearClient:
             if not team_id:
                 logger.error(f"Could not find team for issue {issue_id}")
                 return False
+
+            # Check if issue is already in the target state
+            current_state = (
+                issue_data.get("issue", {}).get("state", {}).get("name", "")
+            )
+            if current_state.strip().lower() == state_name.strip().lower():
+                logger.debug(
+                    f"Issue {issue_id} already in state '{state_name}', skipping"
+                )
+                return True
 
             # Get workflow states for the team
             states_data = await self._graphql(
