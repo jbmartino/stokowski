@@ -1030,6 +1030,10 @@ class Orchestrator:
             for r in self.running.values()
             if r.started_at
         )
+        # Include live tokens from running agents in totals
+        live_input = sum(r.input_tokens for r in self.running.values())
+        live_output = sum(r.output_tokens for r in self.running.values())
+        live_total = sum(r.total_tokens for r in self.running.values())
 
         return {
             "generated_at": now.isoformat(),
@@ -1079,9 +1083,9 @@ class Orchestrator:
                 for issue_id, gate_state in self._pending_gates.items()
             ],
             "totals": {
-                "input_tokens": self.total_input_tokens,
-                "output_tokens": self.total_output_tokens,
-                "total_tokens": self.total_tokens,
+                "input_tokens": self.total_input_tokens + live_input,
+                "output_tokens": self.total_output_tokens + live_output,
+                "total_tokens": self.total_tokens + live_total,
                 "seconds_running": round(
                     self.total_seconds_running + active_seconds, 1
                 ),

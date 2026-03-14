@@ -417,9 +417,11 @@ def _process_event(
         if usage:
             attempt.input_tokens = usage.get("input_tokens", attempt.input_tokens)
             attempt.output_tokens = usage.get("output_tokens", attempt.output_tokens)
+            cache_creation = usage.get("cache_creation_input_tokens", 0)
+            cache_read = usage.get("cache_read_input_tokens", 0)
             attempt.total_tokens = (
-                usage.get("total_tokens", 0)
-                or attempt.input_tokens + attempt.output_tokens
+                attempt.input_tokens + attempt.output_tokens
+                + cache_creation + cache_read
             )
         # Extract result text for last_message
         result_text = event.get("result", "")
@@ -437,6 +439,17 @@ def _process_event(
                 if isinstance(block, dict) and block.get("type") == "text":
                     attempt.last_message = block.get("text", "")[:200]
                     break
+        # Extract token usage from assistant events (available mid-stream)
+        usage = msg.get("usage", {})
+        if usage:
+            attempt.input_tokens = usage.get("input_tokens", attempt.input_tokens)
+            attempt.output_tokens = usage.get("output_tokens", attempt.output_tokens)
+            cache_creation = usage.get("cache_creation_input_tokens", 0)
+            cache_read = usage.get("cache_read_input_tokens", 0)
+            attempt.total_tokens = (
+                attempt.input_tokens + attempt.output_tokens
+                + cache_creation + cache_read
+            )
 
     elif event_type == "tool_use":
         tool_name = event.get("name", event.get("tool", ""))
