@@ -411,15 +411,22 @@ def _process_event(
     event_type = event.get("type", "")
     attempt.last_event = event_type
 
-    # Extract session_id from result events
-    if event_type == "result":
+    # Capture session_id from any event that has it
+    if "session_id" in event and not attempt.session_id:
+        attempt.session_id = event["session_id"]
+
+    if event_type == "system":
+        # Init event — session_id captured above
+        pass
+
+    elif event_type == "result":
         if "session_id" in event:
             attempt.session_id = event["session_id"]
-        # Extract token usage
+        # Result has cumulative usage for the entire turn
         usage = event.get("usage", {})
         if usage:
-            attempt.input_tokens = usage.get("input_tokens", attempt.input_tokens)
-            attempt.output_tokens = usage.get("output_tokens", attempt.output_tokens)
+            attempt.input_tokens = usage.get("input_tokens", 0)
+            attempt.output_tokens = usage.get("output_tokens", 0)
             cache_creation = usage.get("cache_creation_input_tokens", 0)
             cache_read = usage.get("cache_read_input_tokens", 0)
             attempt.total_tokens = (
@@ -432,31 +439,32 @@ def _process_event(
             attempt.last_message = result_text[:200]
 
     elif event_type == "assistant":
-        # Assistant message content
+        # Assistant message content — may contain text and/or tool_use blocks
         msg = event.get("message", {})
         content = msg.get("content", "")
-        if isinstance(content, str) and content:
-            attempt.last_message = content[:200]
-        elif isinstance(content, list):
+        if isinstance(content, list):
             for block in content:
-                if isinstance(block, dict) and block.get("type") == "text":
+                if not isinstance(block, dict):
+                    continue
+                if block.get("type") == "text":
                     attempt.last_message = block.get("text", "")[:200]
-                    break
-        # Extract token usage from assistant events (available mid-stream)
+                elif block.get("type") == "tool_use":
+                    tool_name = block.get("name", "unknown")
+                    attempt.last_message = f"Using tool: {tool_name}"
+        elif isinstance(content, str) and content:
+            attempt.last_message = content[:200]
+
+        # Accumulate token usage from assistant events (per-message)
         usage = msg.get("usage", {})
         if usage:
-            attempt.input_tokens = usage.get("input_tokens", attempt.input_tokens)
-            attempt.output_tokens = usage.get("output_tokens", attempt.output_tokens)
+            attempt.input_tokens += usage.get("input_tokens", 0)
+            attempt.output_tokens += usage.get("output_tokens", 0)
             cache_creation = usage.get("cache_creation_input_tokens", 0)
             cache_read = usage.get("cache_read_input_tokens", 0)
-            attempt.total_tokens = (
-                attempt.input_tokens + attempt.output_tokens
+            attempt.total_tokens += (
+                usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
                 + cache_creation + cache_read
             )
-
-    elif event_type == "tool_use":
-        tool_name = event.get("name", event.get("tool", ""))
-        attempt.last_message = f"Using tool: {tool_name}"
 
     # Forward to orchestrator callback
     if on_event:
