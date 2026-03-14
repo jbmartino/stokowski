@@ -77,6 +77,7 @@ class ServerConfig:
 @dataclass
 class LinearStatesConfig:
     """Maps logical state names to actual Linear state names."""
+    queue: str = "Todo"
     active: str = "In Progress"
     review: str = "Human Review"
     gate_approved: str = "Gate Approved"
@@ -176,6 +177,7 @@ class ServiceConfig:
 def _resolve_linear_state_name(key: str, ls: LinearStatesConfig) -> str:
     """Resolve a logical state key to the actual Linear state name."""
     mapping: dict[str, str] = {
+        "queue": ls.queue,
         "active": ls.active,
         "review": ls.review,
         "gate_approved": ls.gate_approved,
@@ -348,6 +350,7 @@ def parse_workflow_file(path: str | Path) -> WorkflowDefinition:
     # Parse linear_states
     ls_raw = config_raw.get("linear_states", {}) or {}
     linear_states = LinearStatesConfig(
+        queue=str(ls_raw.get("queue", "Todo")),
         active=str(ls_raw.get("active", "In Progress")),
         review=str(ls_raw.get("review", "Human Review")),
         gate_approved=str(ls_raw.get("gate_approved", "Gate Approved")),
@@ -401,7 +404,7 @@ def validate_config(cfg: ServiceConfig) -> list[str]:
         return errors
 
     # Valid linear_state keys
-    valid_linear_keys = {"active", "review", "gate_approved", "rework", "terminal"}
+    valid_linear_keys = {"queue", "active", "review", "gate_approved", "rework", "terminal"}
 
     has_agent = False
     has_terminal = False
