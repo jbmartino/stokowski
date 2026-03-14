@@ -200,8 +200,9 @@ def build_lifecycle_section(
     lines.append("### When Done")
     lines.append("")
     lines.append(
-        "When you have completed your work, post a summary comment on "
-        "the Linear issue describing what was done and any decisions made."
+        "When you have completed your work, post exactly ONE summary comment "
+        "on the Linear issue. Include: what was done, key decisions, and the "
+        "PR link. Do not post multiple summary comments."
     )
     lines.append("")
     lines.append("<!-- END STOKOWSKI LIFECYCLE -->")
