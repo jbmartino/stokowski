@@ -5,6 +5,7 @@ from __future__ import annotations
 import asyncio
 import json
 import logging
+import shutil
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable
@@ -27,7 +28,9 @@ def build_claude_args(
     session_id: str | None = None,
 ) -> list[str]:
     """Build the claude CLI argument list."""
-    args = [claude_cfg.command]
+    # Wrap with stdbuf to force line-buffered stdout (prevents Node.js buffering)
+    stdbuf = shutil.which("stdbuf")
+    args = [stdbuf, "-oL", claude_cfg.command] if stdbuf else [claude_cfg.command]
 
     if session_id:
         # Continuation turn
