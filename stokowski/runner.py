@@ -430,12 +430,7 @@ def _process_event(
         if usage:
             attempt.input_tokens = usage.get("input_tokens", 0)
             attempt.output_tokens = usage.get("output_tokens", 0)
-            cache_creation = usage.get("cache_creation_input_tokens", 0)
-            cache_read = usage.get("cache_read_input_tokens", 0)
-            attempt.total_tokens = (
-                attempt.input_tokens + attempt.output_tokens
-                + cache_creation + cache_read
-            )
+            attempt.total_tokens = attempt.input_tokens + attempt.output_tokens
         # Extract result text for last_message
         result_text = event.get("result", "")
         if isinstance(result_text, str) and result_text:
@@ -462,12 +457,7 @@ def _process_event(
         if usage:
             attempt.input_tokens += usage.get("input_tokens", 0)
             attempt.output_tokens += usage.get("output_tokens", 0)
-            cache_creation = usage.get("cache_creation_input_tokens", 0)
-            cache_read = usage.get("cache_read_input_tokens", 0)
-            attempt.total_tokens += (
-                usage.get("input_tokens", 0) + usage.get("output_tokens", 0)
-                + cache_creation + cache_read
-            )
+            attempt.total_tokens = attempt.input_tokens + attempt.output_tokens
 
     # Forward to orchestrator callback
     if on_event:
