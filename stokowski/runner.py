@@ -316,6 +316,9 @@ async def run_agent_turn(
     async def stall_monitor():
         while proc.returncode is None:
             await asyncio.sleep(min(stall_timeout_s / 4, 30))
+            # Don't flag stall if process already exited
+            if proc.returncode is not None:
+                return
             elapsed = loop.time() - last_activity
             if stall_timeout_s > 0 and elapsed > stall_timeout_s:
                 logger.warning(
